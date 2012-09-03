@@ -31,7 +31,8 @@ import static java.lang.System.out;
 
 import java.awt.Desktop;
 import java.net.URL;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 import javax.swing.JOptionPane;
@@ -47,6 +48,8 @@ import processing.core.PApplet;
 import com.restfb.Connection;
 import com.restfb.DefaultFacebookClient;
 import com.restfb.FacebookClient;
+import com.restfb.Parameter;
+import com.restfb.types.FacebookType;
 import com.restfb.types.Page;
 import com.restfb.types.Post;
 import com.restfb.types.User;
@@ -66,59 +69,71 @@ public class FacebookLibrary {
 		String YOUR_API_KEY = "233100973389749";
 		String YOUR_API_SECRET = "0772afb21ddf0d0fab8200c1ff707319";
 		/*
-		 * https://github.com/fernandezpablo85/scribe-java/blob/master/src/test/java/org/scribe/examples/FacebookExample.java
+		 * https://github.com/fernandezpablo85/scribe-java/blob/master/src/test/java
+		 * /org/scribe/examples/FacebookExample.java
 		 */
 		OAuthService service = new ServiceBuilder()
-		.provider(FacebookApi.class)
-		.apiKey(YOUR_API_KEY)
-		.apiSecret(YOUR_API_SECRET)
-		.callback("http://localhost:8080/oauth_callback/")
-		.build();
-		
+				.provider(FacebookApi.class)
+				.apiKey(YOUR_API_KEY).apiSecret(YOUR_API_SECRET)
+				.callback("http://localhost:8080/oauth_callback/")
+				.build();
+
 		String url = service.getAuthorizationUrl(null);
 		Desktop.getDesktop().browse(new URL(url).toURI());
-		JOptionPane.showMessageDialog(null, "Press ok to continue once you have authenticated.");
-	    
+//		JOptionPane.showMessageDialog(null,
+//				"Press ok to continue once you have authenticated.");
+
 		Scanner in = new Scanner(System.in);
 		Verifier verifier = new Verifier(in.nextLine());
-	    Token accessToken = service.getAccessToken(EMPTY_TOKEN, verifier);
-	    
-	    String token = accessToken.getToken();
-	    String secret = accessToken.getSecret();
-	    
-	    out.println(token+"\n"+secret);
-	    facebookClient = new DefaultFacebookClient(token);
-	    
-	    User user = facebookClient.fetchObject("me", User.class);
-	    Page page = facebookClient.fetchObject("cocacola", Page.class);
+		Token accessToken = service.getAccessToken(EMPTY_TOKEN, verifier);
 
-	    out.println("User name: " + user.getName());
-	    out.println("Page likes: " + page.getLikes());
+		String token = accessToken.getToken();
+		String secret = accessToken.getSecret();
+
+		out.println(token + "\n" + secret);
+		facebookClient = new DefaultFacebookClient(token);
+
+		User user = facebookClient.fetchObject("me", User.class);
+		Page page = facebookClient.fetchObject("cocacola", Page.class);
+
+		out.println("User name: " + user.getName());
+		out.println("Page likes: " + page.getLikes());
 	}
+
 	public FacebookLibrary(String token) {
 		facebookClient = new DefaultFacebookClient(token);
 	}
-	
+
 	public void myFriends() throws Exception {
-		Connection<User> myFriends = facebookClient.fetchConnection("me/friends", User.class);
+		Connection<User> myFriends = facebookClient.fetchConnection(
+				"me/friends", User.class);
 		out.println("Count of my friends: " + myFriends.getData().size());
-		
+
 		for (User friend : myFriends.getData())
-			    out.println("User: " + friend.getName());
+			out.println("User: " + friend.getName());
 	}
+
 	public void myFeeds() throws Exception {
-		Connection<Post> myFeed = facebookClient.fetchConnection("me/feed", Post.class);
+		Connection<Post> myFeed = facebookClient.fetchConnection("me/feed",
+				Post.class);
 		out.println("First item in my feed: " + myFeed.getData().get(0));
+	}
+
+	public void post(String message) throws Exception {
+		FacebookType publishMessageResponse = facebookClient.publish("me/feed",
+				FacebookType.class, Parameter.with("message", message));
+
+		out.println("Published message ID: " + publishMessageResponse.getId());
 	}
 
 	public static String version() {
 		return VERSION;
 	}
-	
+
 	public static void main(String[] args) throws Exception {
-		String myToken = 
-				"AAADUAQy3N7UBALiQbk53RqzIZAq68xfZAppFQ67WXMsEzIcgwZCc2tDKLRFjucGgIDdRAtiaGQbjrqkfU6yWLjzMNA2AbNt1776JOd7AAZDZD";
+		String myToken = "AAADUAQy3N7UBALiQbk53RqzIZAq68xfZAppFQ67WXMsEzIcgwZCc2tDKLRFjucGgIDdRAtiaGQbjrqkfU6yWLjzMNA2AbNt1776JOd7AAZDZD";
 		FacebookLibrary api = new FacebookLibrary(myToken);
 		api.myFriends();
+		//api.post("月曜日のオフィスは。。。");
 	}
 }
